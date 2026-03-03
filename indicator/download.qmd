@@ -1,0 +1,148 @@
+# DEA Land Cover (landsat)
+
+DEA Land Cover (Landsat)
+
+ga_ls_landcover_class_cyear_3
+
+Version:
+2.0.0
+Type:
+Derivative, Raster
+Resolution:
+30 m
+Coverage:
+1988 to 2024
+Data updates:
+Yearly frequency, Ongoing
+
+https://knowledge.dea.ga.gov.au/data/product/dea-land-cover-landsat/?tab=description
+
+
+## Data from DEA datacube 
+
+```bash
+OUTPUT_DIR=$REPODIR/../gisdata/landcover
+rsync -vrP ${NCI_USERNAME}@gadi-dm.nci.org.au:/scratch/${NCI_PROJECT}/${NCI_USERNAME}/Fleurieu-swamps/ ${OUTPUT_DIR}   
+```
+
+```{r}
+library(sf)
+library(here)
+library(dplyr)
+library(terra)
+library(exactextractr)
+library(jsonlite)
+library(stringr)   
+library(ggplot2)
+library(munsell)
+
+```
+
+```{r}
+here::i_am("indicator/download.qmd")
+r0 <- rast(here::here("gisdata/landcover/lc-cell-0.tif"))
+names(r0) <- 2007:2020
+fleurieu_imap <- st_read(here::here("gisdata/TEC/Swamps-Fleurieu-IM.gpkg")) |> st_transform(st_crs(r0)) 
+fleurieu_aoo <- st_read(here::here("gisdata/TEC/Swamps-Fleurieu-IM_AOO.gpkg")) |> st_transform(st_crs(r0))
+
+```
+
+
+```{r}
+plot(r0,1)
+plot(st_geometry(fleurieu_imap),add=TRUE,col="red")
+plot(st_geometry(fleurieu_aoo),add=TRUE,border="red")
+```
+
+```{r}
+
+slc_aoo <- slice(fleurieu_aoo, 1)
+slc_imap <- st_crop(fleurieu_imap,slc_aoo) |> st_union()
+
+qry_aoo <- exact_extract(r0, slc_aoo)
+qry_imap <- exact_extract(r0, slc_imap)
+
+```
+
+```{r}
+lc_dict <- fromJSON(here::here("gisdata/landcover/lc-dict.json"))
+l4_dict <- lc_dict$`level4`
+
+labels <- str_split_fixed(sapply(l4_dict, function(x) x[5]),": ",n=2)
+
+## this is missing some classes
+l4_table <- data.frame( code = names(l4_dict), 
+            R=sapply(l4_dict, function(x) as.numeric(x[1])),
+            G=sapply(l4_dict, function(x) as.numeric(x[2])),
+            B=sapply(l4_dict, function(x) as.numeric(x[3])),
+            label=labels[,1],
+            description=labels[,2])
+            
+ l4_tab <- read.table(here::here("gisdata/landcover/lc-l4-table.csv"), header=FALSE, sep=":", stringsAsFactors=FALSE, fill=TRUE) |> 
+    setNames(c("code","class","vegetation","cover","water","surface")) |>
+  mutate(across(.cols = all_of(c("class","vegetation","cover","water","surface")), .fns = trimws))
+
+```
+
+```{r}
+
+code2lc <- function(data,years) {
+    foreach(year=years, .combine=rbind) %do% {
+        x <- data[year]
+        y <- data.frame(table(x)) |>
+            setNames(c("code","count")) 
+        y$code <- as.integer(as.character(y$code)) 
+        y$year <- as.numeric(year)
+        y <- y |> left_join(l4_tab, by="code" )
+        return(y)
+    }
+}
+
+
+
+```
+
+```{r}
+res <- code2lc(qry_aoo[[1]], as.character(2007:2020))
+res |> group_by(class,year) |> summarise(total=sum(count)) |>
+ggplot( aes(x=year, y=total, fill=class)) + 
+    geom_area()
+
+res |> group_by(vegetation,year) |> summarise(total=sum(count)) |>
+ggplot( aes(x=year, y=total, fill=vegetation)) + 
+    geom_area()
+
+```
+
+```{r}
+res <- code2lc(qry_imap[[1]], as.character(2007:2020))
+res |> group_by(class,year) |> summarise(total=sum(count)) |>
+ggplot( aes(x=year, y=total, fill=class)) + 
+    geom_area()
+
+res |> group_by(vegetation,class,year) |> summarise(total=sum(count)) |>
+ggplot( aes(x=year, y=total, alpha=class,fill=vegetation)) + 
+    geom_area()
+
+res |> group_by(vegetation,cover,year) |> summarise(total=sum(count)) |>
+ggplot( aes(x=year, y=total, fill=vegetation + cover)) + 
+    geom_area()
+```
+
+
+```{r}
+clrs <- c(
+    mnsl(sapply(0:3, lighter, col = "5R 4/8")),
+    mnsl(sapply(0:3, darker, col = "5BG 7/4"))
+    )
+
+grouped_res <- res |> 
+    mutate(
+        vegetation = factor(vegetation, levels=c("Herbaceous","Woody","none")),
+        cover = factor(cover, levels=c("Sparse (4 to 15 %)","Open (15 to 40 %)","Open (40 to 65 %)","Closed (> 65 %)","none")),
+        vegcover=interaction(vegetation,cover, drop=TRUE,lex.order = TRUE)) |> 
+        group_by(vegcover,year) |> summarise(total=sum(count))
+
+ggplot(grouped_res, aes(x=year, y=total, fill=vegcover)) + 
+    geom_area() + scale_fill_manual(values=clrs)
+```
