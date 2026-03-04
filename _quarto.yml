@@ -9,10 +9,13 @@ book:
     - index.qmd
     - part: "Target ecosystem"
       chapters: 
-      - ecosystem/description.ipynb
+      - ecosystem/description.qmd
+      - ecosystem/data-download.ipynb
+      - ecosystem/spatial-metrics.ipynb
     - part: "Indicator design"
       chapters: 
       - indicator/download.qmd
+    - list-of-results.qmd
     - instructions.qmd
     - references.qmd
   margin-header: |
