@@ -1,148 +1,82 @@
-# DEA Land Cover (landsat)
+# Time series of land cover data 
 
-DEA Land Cover (Landsat)
+For this indicator we want to look at how land cover changes in the region where this threatened ecological community is located. 
 
-ga_ls_landcover_class_cyear_3
+We use a landcover product derived from remote sensing (landsat) data that spans more than 30 years. This product allows us to look at changes in land use (cultivated vs. natural vegetation), vegetation type (woody vs herbaceous), vegetation cover (from sparse to closed cover), as well as aquatic vegetation cover, water persistence and seasonality, artifical surfaces and natural bare cover.
 
-Version:
-2.0.0
-Type:
-Derivative, Raster
-Resolution:
-30 m
-Coverage:
-1988 to 2024
-Data updates:
-Yearly frequency, Ongoing
+## Data source 
 
-https://knowledge.dea.ga.gov.au/data/product/dea-land-cover-landsat/?tab=description
+We are using here the Digital Earth Australia Land Cover (Landsat) product, which provides annual land cover maps at 30 m resolution across Australia from 1988 to 2024 [@DEA_landcover]. This product is derived from Landsat satellite imagery and classifies land cover into different classes based on vegetation type, cover level, water presence and surface type [@Lucas_2019]. 
 
+:::{.aside}
+**DEA Land Cover (Landsat)**
 
-## Data from DEA datacube 
+[Data description link](https://knowledge.dea.ga.gov.au/data/product/dea-land-cover-landsat/?tab=description)<br>
+*id*: `ga_ls_landcover_class_cyear_3`<br>
+*Version*: 2.0.0<br>
+*Type*: Derivative, Raster<br>
+*Resolution*: 30 m<br>
+*Coverage*: 1988 to 2024<br>
+*Data updates*: Yearly frequency, Ongoing<br>
 
-```bash
-OUTPUT_DIR=$REPODIR/../gisdata/landcover
-rsync -vrP ${NCI_USERNAME}@gadi-dm.nci.org.au:/scratch/${NCI_PROJECT}/${NCI_USERNAME}/Fleurieu-swamps/ ${OUTPUT_DIR}   
-```
+:::
 
-```{r}
-library(sf)
-library(here)
-library(dplyr)
-library(terra)
-library(exactextractr)
-library(jsonlite)
-library(stringr)   
-library(ggplot2)
-library(munsell)
+## Processing data from DEA datacube
 
-```
+We run a script on NCI Gadi to extract the land cover data for each grid cell in our AOO grid, and then we can use `rsync` to download the data to our local machine.
 
-```{r}
-here::i_am("indicator/download.qmd")
-r0 <- rast(here::here("gisdata/landcover/lc-cell-0.tif"))
-names(r0) <- 2007:2020
-fleurieu_imap <- st_read(here::here("gisdata/TEC/Swamps-Fleurieu-IM.gpkg")) |> st_transform(st_crs(r0)) 
-fleurieu_aoo <- st_read(here::here("gisdata/TEC/Swamps-Fleurieu-IM_AOO.gpkg")) |> st_transform(st_crs(r0))
+### Python script to extract land cover data for each grid cell
 
-```
+```{python}
+#| eval: false
+#| filename: "@gadi.nci.org.au: landcover-fleurieu.py"
+## This script extracts the land cover data for each grid cell in the AOO grid from the DEA datacube and saves it as a GeoTIFF file.
 
-
-```{r}
-plot(r0,1)
-plot(st_geometry(fleurieu_imap),add=TRUE,col="red")
-plot(st_geometry(fleurieu_aoo),add=TRUE,border="red")
-```
-
-```{r}
-
-slc_aoo <- slice(fleurieu_aoo, 1)
-slc_imap <- st_crop(fleurieu_imap,slc_aoo) |> st_union()
-
-qry_aoo <- exact_extract(r0, slc_aoo)
-qry_imap <- exact_extract(r0, slc_imap)
-
-```
-
-```{r}
-lc_dict <- fromJSON(here::here("gisdata/landcover/lc-dict.json"))
-l4_dict <- lc_dict$`level4`
-
-labels <- str_split_fixed(sapply(l4_dict, function(x) x[5]),": ",n=2)
-
-## this is missing some classes
-l4_table <- data.frame( code = names(l4_dict), 
-            R=sapply(l4_dict, function(x) as.numeric(x[1])),
-            G=sapply(l4_dict, function(x) as.numeric(x[2])),
-            B=sapply(l4_dict, function(x) as.numeric(x[3])),
-            label=labels[,1],
-            description=labels[,2])
-            
- l4_tab <- read.table(here::here("gisdata/landcover/lc-l4-table.csv"), header=FALSE, sep=":", stringsAsFactors=FALSE, fill=TRUE) |> 
-    setNames(c("code","class","vegetation","cover","water","surface")) |>
-  mutate(across(.cols = all_of(c("class","vegetation","cover","water","surface")), .fns = trimws))
-
-```
-
-```{r}
-
-code2lc <- function(data,years) {
-    foreach(year=years, .combine=rbind) %do% {
-        x <- data[year]
-        y <- data.frame(table(x)) |>
-            setNames(c("code","count")) 
-        y$code <- as.integer(as.character(y$code)) 
-        y$year <- as.numeric(year)
-        y <- y |> left_join(l4_tab, by="code" )
-        return(y)
+# Import necessary libraries
+import datacube
+import geopandas as gpd
+import rioxarray
+import numpy as np
+# Initialise datacube
+dc = datacube.Datacube(app="DEA_Land_Cover")
+# Vector file with the AOO grid
+poly = gpd.read_file("Swamps-Fleurieu-IM_AOO.gpkg").to_crs(4326)
+# Full range of dates:
+time_range = ("1988", "2024")
+# Loop through all polygons in the AOO grid and extract the land cover data for each polygon
+for idx,slc in poly.bounds.iterrows():
+    lon_range=np.array((slc['minx'],slc['maxx']))
+    lat_range=np.array((slc['miny'],slc['maxy']))
+    # Create the 'query' dictionary object, which contains the longitudes, latitudes and time defined above
+    query = {
+        "y": lat_range,
+        "x": lon_range,
+        "time": time_range,
     }
-}
 
-
-
-```
-
-```{r}
-res <- code2lc(qry_aoo[[1]], as.character(2007:2020))
-res |> group_by(class,year) |> summarise(total=sum(count)) |>
-ggplot( aes(x=year, y=total, fill=class)) + 
-    geom_area()
-
-res |> group_by(vegetation,year) |> summarise(total=sum(count)) |>
-ggplot( aes(x=year, y=total, fill=vegetation)) + 
-    geom_area()
-
-```
-
-```{r}
-res <- code2lc(qry_imap[[1]], as.character(2007:2020))
-res |> group_by(class,year) |> summarise(total=sum(count)) |>
-ggplot( aes(x=year, y=total, fill=class)) + 
-    geom_area()
-
-res |> group_by(vegetation,class,year) |> summarise(total=sum(count)) |>
-ggplot( aes(x=year, y=total, alpha=class,fill=vegetation)) + 
-    geom_area()
-
-res |> group_by(vegetation,cover,year) |> summarise(total=sum(count)) |>
-ggplot( aes(x=year, y=total, fill=vegetation + cover)) + 
-    geom_area()
-```
-
-
-```{r}
-clrs <- c(
-    mnsl(sapply(0:3, lighter, col = "5R 4/8")),
-    mnsl(sapply(0:3, darker, col = "5BG 7/4"))
+    # Load DEA Land Cover data from the datacube
+    lc = dc.load(
+        product="ga_ls_landcover_class_cyear_3",
+        output_crs="EPSG:3577",
+        measurements=[
+            "level3",
+            "level4"
+        ],
+        resolution=(-30, 30),
+        **query
     )
+    output_path = "lc-cell-{}.tif".format(idx)
+    lc.level4.rio.to_raster(output_path, driver="GTiff")
+```
 
-grouped_res <- res |> 
-    mutate(
-        vegetation = factor(vegetation, levels=c("Herbaceous","Woody","none")),
-        cover = factor(cover, levels=c("Sparse (4 to 15 %)","Open (15 to 40 %)","Open (40 to 65 %)","Closed (> 65 %)","none")),
-        vegcover=interaction(vegetation,cover, drop=TRUE,lex.order = TRUE)) |> 
-        group_by(vegcover,year) |> summarise(total=sum(count))
+### Sync data from NCI Gadi to local machine
 
-ggplot(grouped_res, aes(x=year, y=total, fill=vegcover)) + 
-    geom_area() + scale_fill_manual(values=clrs)
+This is an example of the `rsync` command to download the land cover data from NCI Gadi to your local machine. You will need to replace the placeholders with your own values.
+
+```{.sh filename="@local: use the shell terminal"}
+export REPODIR=...
+export OUTPUT_DIR=$REPODIR/gisdata/landcover
+export NCI_USERNAME=...
+export NCI_PROJECT=...
+rsync -vruP ${NCI_USERNAME}@gadi-dm.nci.org.au:/scratch/${NCI_PROJECT}/${NCI_USERNAME}/Fleurieu-swamps/ ${OUTPUT_DIR}   
 ```
