@@ -1,0 +1,24 @@
+---
+title: "Mount Magnificent"
+params:
+ cellcode: 3
+execute:
+ eval: true
+ echo: false
+ warning: false
+ message: false
+---
+
+## Location 
+
+{{< include _read-spatial-data.qmd >}}
+
+## Summary for the region of interest (cell)
+
+{{< include _cell-summary.qmd >}}
+
+## Summary for the TEC polygons
+
+How many patches here?
+
+{{< include _imap-summary.qmd >}}

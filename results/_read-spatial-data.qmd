@@ -1,11 +1,3 @@
----
-title: "Which name"
-subtitle: "Cell 0"
-params:
- cellcode: 1
-execute:
- echo: false
----
 
 ```{r}
 library(sf)
@@ -27,15 +19,18 @@ source(here::here("inc/landcover-functions.R"))
 ```{r}
 #| label: load data
 slc_code <- as.numeric(params$cellcode)
-raster_file <- sprintf("gisdata/landcover/lc-cell-%s.tif", slc_code-1)
+raster_file <- sprintf("gisdata/landcover/lc-cell-id-%s.tif", slc_code)
 r0 <- rast(here::here(raster_file))
+names(r0) <- 1988:2024
 here::i_am("indicator/download.qmd")
 slc_aoo <- st_read(
-    here::here("gisdata/TEC/Swamps-Fleurieu-IM_AOO.gpkg")) |> 
+    here::here("gisdata/TEC/Swamps-Fleurieu-IM_AOO.gpkg"),
+    quiet = TRUE) |> 
     st_transform(st_crs(r0)) |>
     slice(slc_code)
 slc_imap <- st_read(
-    here::here("gisdata/TEC/Swamps-Fleurieu-IM.gpkg")) |> 
+    here::here("gisdata/TEC/Swamps-Fleurieu-IM.gpkg"),
+    quiet = TRUE) |> 
     st_transform(st_crs(r0)) |>
     st_crop(slc_aoo)
 ```
@@ -43,5 +38,5 @@ slc_imap <- st_read(
 Here we focus on this region of the Fleurieu Peninsula:
 ```{r}
 #| label: map of the cell
-mapview(slc_aoo) + mapview(slc_imap)
+mapview(slc_aoo) + mapview(slc_imap) + mapview(r0, hide=TRUE)
 ```

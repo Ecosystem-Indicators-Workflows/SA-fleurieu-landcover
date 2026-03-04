@@ -1,0 +1,55 @@
+
+```{r}
+#| label: extract lc data for patch
+qry_imap <- exact_extract(r0, slc_imap, progress=FALSE)
+names(qry_imap) <- rownames(slc_imap)
+res <- code2lc(qry_imap, as.character(1988:2024))
+
+big_patches <- unique(res$patch)
+if (length(big_patches) > 4) {
+    big_patches <- res |> 
+        filter(year==2010) |> 
+        group_by(patch) |> 
+        summarise(total=sum(count)) |> 
+        arrange(desc(total)) |> 
+        mutate(perc=total/sum(total)) |>
+        mutate(cumsum=cumsum(perc)) |>
+        filter(cumsum<2/3) |>
+        pull(patch)
+} 
+res <- res |> mutate(patch=if_else(patch %in% big_patches, sprintf("Patch %s", patch), "Other patches"))
+```
+
+```{r}
+res |> 
+    group_by(patch,class,year) |> 
+    summarise(total=sum(count)) |>
+    ggplot( aes(x=year, y=total, fill=class)) + 
+        geom_area() + 
+        facet_wrap(patch ~ .) +
+        theme_linedraw() +
+        theme(legend.position = "top")
+```
+
+```{r}
+clrs <- c(
+    mnsl(sapply(0:3, lighter, col = "5R 4/8")),
+    mnsl(sapply(0:3, darker, col = "5BG 7/4"))
+    )
+
+grouped_res <- res |> 
+    mutate(
+        vegetation = factor(vegetation, levels=c("Herbaceous","Woody","none")),
+        cover = factor(cover, levels=c("Sparse (4 to 15 %)","Open (15 to 40 %)","Open (40 to 65 %)","Closed (> 65 %)","none")),
+        vegcover=interaction(vegetation,cover, drop=TRUE,lex.order = TRUE)) |> 
+        filter(class %in% c("Natural Terrestrial Vegetated", "Cultivated Terrestrial Vegetated")) |>
+        group_by(class,patch,vegcover,year) |> 
+        summarise(total=sum(count), .groups="drop")
+
+ggplot(grouped_res, aes(x=year, y=total, fill=vegcover)) + 
+    geom_area() + scale_fill_manual(values=clrs) +
+    facet_grid(patch ~ class) +
+    theme_linedraw() +
+    theme(legend.position = "right")
+```
+

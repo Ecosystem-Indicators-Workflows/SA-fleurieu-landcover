@@ -1,8 +1,0 @@
----
-listing: 
- contents: results/cell-0-overview.qmd
- type: table
----
-
-# Results per region
-

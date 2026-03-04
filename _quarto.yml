@@ -11,11 +11,15 @@ book:
       chapters: 
       - ecosystem/description.qmd
       - ecosystem/data-download.ipynb
-      - ecosystem/spatial-metrics.ipynb
+      - ecosystem/spatial-metrics.qmd
     - part: "Indicator design"
       chapters: 
       - indicator/download.qmd
-    - list-of-results.qmd
+    - part: "Results"
+      chapters: 
+      - results/cell-1.qmd
+      - results/cell-2.qmd
+      - results/cell-3.qmd
     - instructions.qmd
     - references.qmd
   margin-header: |

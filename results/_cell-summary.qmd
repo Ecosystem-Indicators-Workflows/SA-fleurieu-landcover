@@ -1,0 +1,21 @@
+
+```{r}
+#| label: extract land cover data
+qry_aoo <- exact_extract(r0, slc_aoo)
+names(qry_aoo) <- slc_aoo$id
+res <- code2lc(qry_aoo, as.character(1988:2024))
+```
+
+
+```{r}
+#| fig-cap: Changes in counts of pixels per class per year for the whole region of interest.
+#| fig-label: roi-classes
+#| fig-width: 9
+res |> 
+    group_by(class,year) |> 
+    summarise(total=sum(count)) |>
+    ggplot( aes(x=year, y=total, fill=class)) + 
+        geom_area() +
+        theme_linedraw() +
+        theme(legend.position="top")
+```

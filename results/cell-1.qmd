@@ -1,47 +1,24 @@
 ---
-title: "Another name"
-subtitle: "Cell 1"
+title: "Mount Terrible"
 params:
  cellcode: 1
 execute:
+ eval: true
  echo: false
+ warning: false
+ message: false
 ---
 
-```{r}
-library(sf)
-library(here)
-library(dplyr)
-library(terra)
-library(exactextractr)
-# library(jsonlite)
-# library(stringr)   
-library(ggplot2)
-library(munsell)
-library(mapview)
-```
+## Location 
 
-```{r}    
-source(here::here("inc/landcover-functions.R"))
-```
+This region is located around Mount Terrible. 
 
-```{r}
-#| label: load data
-slc_code <- as.numeric(params$cellcode)
-raster_file <- sprintf("gisdata/landcover/lc-cell-%s.tif", slc_code-1)
-r0 <- rast(here::here(raster_file))
-here::i_am("indicator/download.qmd")
-slc_aoo <- st_read(
-    here::here("gisdata/TEC/Swamps-Fleurieu-IM_AOO.gpkg")) |> 
-    st_transform(st_crs(r0)) |>
-    slice(slc_code)
-slc_imap <- st_read(
-    here::here("gisdata/TEC/Swamps-Fleurieu-IM.gpkg")) |> 
-    st_transform(st_crs(r0)) |>
-    st_crop(slc_aoo)
-```
+{{< include _read-spatial-data.qmd >}}
 
-Here we focus on this region of the Fleurieu Peninsula:
-```{r}
-#| label: map of the cell
-mapview(slc_aoo) + mapview(slc_imap)
-```
+## Summary for the region of interest (cell)
+
+{{< include _cell-summary.qmd >}}
+
+## Summary for the TEC polygons
+
+{{< include _imap-summary.qmd >}}

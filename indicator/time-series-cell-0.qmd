@@ -18,6 +18,8 @@ source(here::here("inc/landcover-functions.R"))
 ```{r}
 #| label: load data
 here::i_am("indicator/download.qmd")
+r0 <- rast(here::here("gisdata/landcover/lc-cell-id-1.tif"))
+names(r0) <- 1988:2024
 slc_aoo <- st_read(
     here::here("gisdata/TEC/Swamps-Fleurieu-IM_AOO.gpkg")) |> 
     st_transform(st_crs(r0)) |>
@@ -37,8 +39,7 @@ mapview(slc_aoo) + mapview(slc_imap)
 First, we read the information of the landcover raster and confirm that the spatial extent matches the location of the grid cell:
 ```{r}
 #| label: confirm location matches
-r0 <- rast(here::here("gisdata/landcover/lc-cell-0.tif"))
-names(r0) <- 1988:2024
+
 plot(r0,1)
 plot(st_geometry(slc_aoo),add=TRUE,col=NA, border="red", lwd=2)
 plot(st_geometry(slc_imap),add=TRUE,border="red", lwd=4)
