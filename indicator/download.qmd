@@ -25,6 +25,19 @@ We are using here the Digital Earth Australia Land Cover (Landsat) product, whic
 
 We run a script on NCI Gadi to extract the land cover data for each grid cell in our AOO grid, and then we can use `rsync` to download the data to our local machine.
 
+
+### Upload vector data to NCI Gadi
+
+First we upload our vector file from our local machine to NCI Gadi using the Gadi DataMover node. You will need to replace the placeholders with your own user and project codes.
+
+```{.sh filename="@local: use the shell terminal"}
+export REPODIR=...
+export OUTPUT_DIR=$REPODIR/gisdata/TEC
+export NCI_USERNAME=...
+export NCI_PROJECT=...
+scp ${OUTPUT_DIR}/Swamps-Fleurieu-IM_AOO.gpkg ${NCI_USERNAME}@gadi-dm.nci.org.au:/scratch/${NCI_PROJECT}/${NCI_USERNAME}/Fleurieu-swamps/
+```
+
 ### Python script to extract land cover data for each grid cell
 
 ```{python}
@@ -41,6 +54,8 @@ import numpy as np
 dc = datacube.Datacube(app="DEA_Land_Cover")
 # Vector file with the AOO grid
 poly = gpd.read_file("Swamps-Fleurieu-IM_AOO.gpkg").to_crs(4326)
+poly.id = [int(x) for x in poly.id]
+poly.set_index('id', inplace=True)
 # Full range of dates:
 time_range = ("1988", "2024")
 # Loop through all polygons in the AOO grid and extract the land cover data for each polygon

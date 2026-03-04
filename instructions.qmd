@@ -40,6 +40,13 @@ pip install ipywidgets
 ```
 And restart the server
 
+I still have some unresolved problems with the combination of `R+mapview+ipynb`. So I converted the problematic notebooks to jupyter using:
+
+```sh
+ quarto convert ecosystem/spatial-metrics.ipynb 
+```
+
+
 ### Bash kernel
 
 For the bash kernel, we need to do these two steps:
@@ -49,10 +56,11 @@ pip install bash_kernel
 python -m bash_kernel.install
 ```
 
-In order to move data from/to NCI Gadi, we can set up [streamlined secure remote access](https://medium.com/@prateek.malhotra004/streamlining-secure-remote-access-a-guide-to-passwordless-ssh-connections-between-linux-servers-8c26bb008af9):
+In order to move data from/to NCI Gadi, we can set up [streamlined secure remote access](https://medium.com/@prateek.malhotra004/streamlining-secure-remote-access-a-guide-to-passwordless-ssh-connections-between-linux-servers-8c26bb008af9), and then use this to share the ssh credentials with the server:
 
 ```sh
-ssh-copy-id user@serverB_IP
+export USERNAME=...
+ssh-copy-id ${USERNAME}@gadi.nci.org.au
 ```
 
 ## R 

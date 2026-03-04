@@ -1,0 +1,95 @@
+---
+title: Data Preparation
+---
+
+For the analysis, we will use a spatial grid to break down the distribution of the ecosystems into different sections or regions. 
+
+For convenience, we will use the Area of Occupancy grid or AOO that is recommended for ecosystem risk assessments [@IUCN_2025]. 
+
+
+## Area of Occupancy grid
+
+We will create the AOO grid using functions from R package [`redlistr`](https://github.com/red-list-ecosystem/redlistr).
+
+```{r}
+#| warnings: false
+library(redlistr)
+library(sf)
+library(dplyr)
+library(mapview)
+```
+
+We use the `here::i_am` function to establish our project root folder and use relative paths to locate input data files.
+
+```{r}
+here::i_am("ecosystem/spatial-metrics.qmd")
+```
+
+We read the vector data generated in the previous step and project the data.
+
+```{r}
+fleurieu_imap <- st_read(here::here("gisdata/TEC/Swamps-Fleurieu-IM.gpkg")) |>
+    st_transform( "EPSG:7853") 
+```
+
+We run the `getAOO` function to extract an optimal grid covering the areas of the indicative distribution map. We turn-off the `jitter` option to get the default result.
+
+```{r}
+fleurieu_AOO <- getAOO(fleurieu_imap, jitter = FALSE)@grid
+```
+
+We do a quick plot to check the distribution of the target ecosystem and the AOO grid on top of it. We visually check that there is no misalignment or excluded areas.
+
+```{r}
+plot(st_geometry(fleurieu_AOO))
+plot(st_geometry(fleurieu_imap), add=TRUE, col="red", border="red")
+```
+
+
+We add id and name to each cell in order to identify them better in the results section.
+
+```{r}
+fleurieu_AOO$id <- as.numeric(rownames(fleurieu_AOO))
+fleurieu_AOO$name <- names <- c(
+  "Mount Terrible",
+  "Mount Compass",
+  "Mount Magnificent (E)",
+  "Gemmel Hill",
+  "Myponga reservoir",
+  "Mount Cone",
+  "A13",
+  "Wright Hill",
+  "Watchalunga",
+  "Milang",
+  "Mount Hayfield",
+  "Inman Valley",
+  "Strangways Hill",
+  "McFarlane Hill",
+  "Goolwa Channel",
+  "Clayton Bay",
+  "Deep Creek",
+  "Arthur Hill",
+  "West of Ridgeway Hill",
+  "Ridgeway Hill"
+  )
+fleurieu_AOO <- transmute(fleurieu_AOO, id, name)
+```
+
+## Exploring the cells
+
+```{r}
+mapview(fleurieu_AOO, zcol="id")
+```
+
+
+## Export as a spatial vector file
+
+We are satisfied with this grid, and we export it in Geopackage format (GPKG).
+
+```{r}
+write_sf(
+  fleurieu_AOO,
+  here::here("gisdata/TEC/Swamps-Fleurieu-IM_AOO.gpkg")
+)
+```
+
