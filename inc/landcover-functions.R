@@ -11,7 +11,7 @@ l4_tab <-
                 .fns = trimws))
 
 code2lc <- function(data,years) {
-  vars <- expand.grid(i = seq(along = data), years = years)
+  vars <- expand.grid(i =names(data), years = years)
   foreach(year = vars$years, i = vars$i, .combine = rbind) %do% {
     x <- data[[i]][year]
     y <- data.frame(table(x)) |>
