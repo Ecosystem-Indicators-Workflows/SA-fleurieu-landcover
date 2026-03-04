@@ -1,9 +1,10 @@
+
 ---
-title: "Mount Magnificent"
+title: "Mount Magnificent (E)"
 params:
  cellcode: 3
 execute:
- eval: true
+ eval: false
  echo: false
  warning: false
  message: false
@@ -18,7 +19,5 @@ execute:
 {{< include _cell-summary.qmd >}}
 
 ## Summary for the TEC polygons
-
-How many patches here?
 
 {{< include _imap-summary.qmd >}}

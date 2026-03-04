@@ -14,7 +14,7 @@ if (length(big_patches) > 4) {
         arrange(desc(total)) |> 
         mutate(perc=total/sum(total)) |>
         mutate(cumsum=cumsum(perc)) |>
-        filter(cumsum<2/3) |>
+        filter(cumsum<3/4) |>
         pull(patch)
 } 
 res <- res |> mutate(patch=if_else(patch %in% big_patches, sprintf("Patch %s", patch), "Other patches"))

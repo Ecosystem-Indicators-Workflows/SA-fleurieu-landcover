@@ -1,0 +1,23 @@
+
+---
+title: "West of Ridgeway Hill"
+params:
+ cellcode: 19
+execute:
+ eval: false
+ echo: false
+ warning: false
+ message: false
+---
+
+## Location 
+
+{{< include _read-spatial-data.qmd >}}
+
+## Summary for the region of interest (cell)
+
+{{< include _cell-summary.qmd >}}
+
+## Summary for the TEC polygons
+
+{{< include _imap-summary.qmd >}}

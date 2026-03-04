@@ -1,9 +1,10 @@
+
 ---
-title: "Mount Terrible"
+title: "Gemmel Hill"
 params:
  cellcode: 4
 execute:
- eval: true
+ eval: false
  echo: false
  warning: false
  message: false
@@ -11,6 +12,12 @@ execute:
 
 ## Location 
 
-This region is located around Mount Terrible. 
-
 {{< include _read-spatial-data.qmd >}}
+
+## Summary for the region of interest (cell)
+
+{{< include _cell-summary.qmd >}}
+
+## Summary for the TEC polygons
+
+{{< include _imap-summary.qmd >}}
