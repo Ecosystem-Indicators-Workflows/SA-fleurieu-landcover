@@ -1,0 +1,200 @@
+# Data exploration
+
+## Set up
+
+Load libraries.
+```{r}
+#| label: load libraries
+library(sf)
+library(here)
+library(dplyr)
+library(terra)
+library(exactextractr)
+library(ggplot2)
+library(munsell)
+library(mapview)
+library(units)
+```
+
+Source script with utility functions for this step.
+
+```{r}    
+#| label: source functions
+source(here::here("inc/landcover-functions.R"))
+```
+
+Define the root folder for this repository and work with relative paths:
+
+```{r}    
+#| label: root path
+here::i_am("indicator/download.qmd")
+```
+
+## Import the spatial data
+
+Here we run an example of the steps of data exploation from one region. In a previous step we defined 20 regions of interest based on the Area of Occupancy grid.
+
+Here we focus on the following region:
+
+```{r}
+#| label: selection
+slc_code <- 5
+```
+
+First we read the AOO grid vector and filter to the unit of interest 
+```{r}
+#| label: read AOO data
+slc_aoo <- st_read(
+    here::here("gisdata/TEC/Swamps-Fleurieu-IM_AOO.gpkg")) |> 
+    filter(id %in% slc_code)
+```
+
+
+The working name for this region of interest is:
+
+```{r}
+#| label: show AOO data 
+st_drop_geometry(slc_aoo)
+```
+
+
+Now we read the indicative map and crop the polygons to the region of interest:
+```{r}
+slc_imap <- st_read(
+    here::here("gisdata/TEC/Swamps-Fleurieu-IM.gpkg")) |> 
+    st_transform(st_crs(slc_aoo)) |>
+    st_crop(slc_aoo)
+
+```
+
+This region has several patches with areas between 4 and 42 hectars:
+
+```{r}
+slc_imap |>
+    transmute(SHAPE_Area, calc_area=set_units(st_area(SHAPE),'ha')) |>
+    st_drop_geometry()
+
+```
+
+Now we read the time series of landcover maps from the GeoTiff file, this raster has multiple bands, each representing a different year from 1988 to 2024:
+
+```{r}
+#| label: load data
+raster_file <- sprintf("gisdata/landcover/lc-cell-id-%s.tif", slc_code)
+r0 <- rast(here::here(raster_file))
+names(r0) <- 1988:2024
+```
+
+We reproject the vector data to match the Coordinate Reference System of the raster data.
+```{r}
+#| label: reproject vectors
+slc_imap <- st_transform(slc_imap,st_crs(r0))
+slc_aoo <- st_transform(slc_aoo,st_crs(r0))
+```
+
+## Visualise the spatial data
+
+This plot let's us confirm that the spatial extent matches the location of the grid cell:
+```{r}
+#| label: confirm location matches
+plot(r0,1)
+plot(st_geometry(slc_aoo),add=TRUE,col=NA, border="red", lwd=2)
+plot(st_geometry(slc_imap),add=TRUE,border="red", lwd=4)
+```
+
+We can also explore the data interactively:
+Here we focus on this region of the Fleurieu Peninsula:
+```{r}
+#| label: map of the cell
+mapview(slc_aoo) + mapview(slc_imap) + mapview(r0)
+```
+
+## Extracting time series data per region
+
+Now we can extract the land cover information for the whole gridcell 
+
+```{r}
+#| label: extract land cover data ROI
+#| eval: true
+qry_aoo <- exact_extract(r0, slc_aoo)
+names(qry_aoo) <- slc_aoo$id
+```
+
+We use our custom function `code2lc` to convert the land cover codes into the corresponding classes, vegetation types and cover levels. 
+
+```{r}
+#| eval: true
+res <- code2lc(qry_aoo, as.character(1988:2024))
+slice_sample(res,n=5)
+```
+
+We can summarise and plot the results by year and class:
+
+```{r}
+#| eval: true
+res |> 
+    group_by(class,year) |> 
+    summarise(total=sum(count), .groups="drop") |>
+    ggplot( aes(x=year, y=total, fill=class)) + 
+        geom_area()
+```
+
+Or using the vegetation type:
+```{r}
+#| eval: false
+res |> 
+    group_by(vegetation,year) |> 
+    summarise(total=sum(count)) |>
+    ggplot( aes(x=year, y=total, fill=vegetation)) + 
+        geom_area()
+```
+
+
+## Extracting time series data per polygon
+Now we can extract the land cover information for the whole gridcell and indicative map polygons within this area:
+
+```{r}
+#| label: extract land cover data
+#| eval: true
+qry_imap <- exact_extract(r0, slc_imap)
+names(qry_imap) <- rownames(slc_imap)
+```
+
+```{r}
+#| eval: false
+res <- code2lc(qry_imap, as.character(1988:2024))
+res |> 
+    group_by(class,year) |> summarise(total=sum(count)) |>
+ggplot( aes(x=year, y=total, fill=class)) + 
+    geom_area()
+```
+
+```{r}
+res |> group_by(vegetation,class,year) |> summarise(total=sum(count)) |>
+ggplot( aes(x=year, y=total, alpha=class,fill=vegetation)) + 
+    geom_area()
+```
+
+
+```{r}
+#| eval: true
+clrs <- c(
+    mnsl(sapply(0:3, lighter, col = "5R 4/8")),
+    mnsl(sapply(0:3, darker, col = "5BG 7/4"))
+    )
+
+grouped_res <- res |> 
+    mutate(
+        vegetation = factor(vegetation, levels=c("Herbaceous","Woody","none")),
+        cover = factor(cover, levels=c("Sparse (4 to 15 %)","Open (15 to 40 %)","Open (40 to 65 %)","Closed (> 65 %)","none")),
+        vegcover=interaction(vegetation,cover, drop=TRUE,lex.order = TRUE)) |> 
+        filter(class %in% c("Natural Terrestrial Vegetated", "Cultivated Terrestrial Vegetated")) |>
+        group_by(class,patch,vegcover,year) |> 
+        summarise(total=sum(count), .groups="drop")
+
+ggplot(grouped_res, aes(x=year, y=total, fill=vegcover)) + 
+    geom_area() + scale_fill_manual(values=clrs) +
+    facet_grid(patch ~ class) +
+    theme_linedraw() +
+    theme(legend.position = "right")
+```
