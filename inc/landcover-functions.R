@@ -1,7 +1,7 @@
 require(foreach)
 l4_tab <-
   read.table(
-             here::here("gisdata/landcover/lc-l4-table.csv"),
+             here::here("inc/lc-l4-table.csv"),
              header = FALSE, sep = ":",
              stringsAsFactors = FALSE, fill = TRUE) |>
   setNames(c("code", "class", "vegetation", "cover", "water", "surface")) |>

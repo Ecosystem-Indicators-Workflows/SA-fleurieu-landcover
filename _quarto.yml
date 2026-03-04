@@ -15,11 +15,21 @@ book:
     - part: "Indicator design"
       chapters: 
       - indicator/download.qmd
-    - part: "Results"
+      - indicator/exploration.qmd
+    - part: "Results per region"
       chapters: 
       - results/cell-1.qmd
       - results/cell-2.qmd
       - results/cell-3.qmd
+      - results/cell-4.qmd
+      - results/cell-5.qmd
+      - results/cell-6.qmd
+      - results/cell-7.qmd
+      - results/cell-8.qmd
+      - results/cell-9.qmd
+      - results/cell-10.qmd
+      - results/cell-11.qmd
+      - results/cell-12.qmd
     - instructions.qmd
     - references.qmd
   margin-header: |
