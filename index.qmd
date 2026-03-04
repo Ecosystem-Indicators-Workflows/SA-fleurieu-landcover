@@ -1,20 +1,19 @@
-# Overview of this document
+# Overview of this document {.unnumbered}
 
 This document is part of the ARDC Ecosystem Indicators Workflows project.
 
 ::: {.callout-note}
 ## Target ecosystem type
-Fleurie Swamps, South Australia
+The Swamps of the Fleurieu Peninsula, South Australia
 :::
 
 ::: {.callout-note}
 ## Purpose
 
-To design an indicator of land cover change in Fleurie Swamps, South Australia.
+To design indicators of integrity and recovery based on time series of land cover change in The Swamps of the Fleurieu Peninsula, South Australia.
 :::
 
 ## Workflow plan 
-
 
 This resource includes the following components :
 
@@ -29,7 +28,7 @@ Use the links on the left to navigate through the different sections of this res
 
 ## Contributors
 
-Mark Tozer contributed the preliminary cross-referencing tables of South Australia's ecosystems to the IUCN Global Ecosystem Typology. 
+Natasha Jenssen, Jessica Walsh at QUT organised the expert workshops.
 
 ## Reproducibility statement
 
@@ -43,6 +42,8 @@ This work was partly supported by:
 - [The Ian Potter Foundation](https://www.ianpotter.org.au) grant "Tracking ecosystems and adapting management to change (ID: 21592)". 
 
 The [Ecosystem Indicators Workflows](https://ardc.edu.au/project/) project received investment from the Australian Research Data Commons (ARDC). The ARDC is funded by the National Collaborative Research Infrastructure Strategy (NCRIS).
+
+This project was undertaken with the assistance of resources and services from the National Computational Infrastructure (NCI), which is supported by the Australian Government.
 
 ![](/assets/1839-IPF-Master Logo-RGB-Lores.jpg){width="250px" style="padding: 25px;"}
 ![](/assets/ARDC_logo_RGB.png){width="250px" style="padding: 25px;"}
