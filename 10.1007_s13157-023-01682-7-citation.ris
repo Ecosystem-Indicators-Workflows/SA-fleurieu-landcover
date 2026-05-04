@@ -1,0 +1,25 @@
+TY  - JOUR
+AU  - Dunn, Bex
+AU  - Ai, Emma
+AU  - Alger, Matthew J.
+AU  - Fanson, Ben
+AU  - Fickas, Kate C.
+AU  - Krause, Claire E.
+AU  - Lymburner, Leo
+AU  - Nanson, Rachel
+AU  - Papas, Phil
+AU  - Ronan, Mike
+AU  - Thomas, Rachael F.
+PY  - 2023
+DA  - 2023/04/14
+TI  - Wetlands Insight Tool: Characterising the Surface Water and Vegetation Cover Dynamics of Individual Wetlands Using Multidecadal Landsat Satellite Data
+JO  - Wetlands
+SP  - 37
+VL  - 43
+IS  - 4
+AB  - Wetlands around the world provide crucial ecosystem services and are under increasing pressure from multiple sources including climate change, changing flow and flooding regimes, and encroaching human populations. The Landsat satellite imagery archive provides a unique observational record of how wetlands have responded to these impacts during the last three decades. Information stored within this archive has historically been difficult to access due to its petabyte-scale and the challenges in converting Earth observation data into biophysical measurements that can be interpreted by wetland ecologists and catchment managers. This paper introduces the Wetlands Insight Tool (WIT), a workflow that generates WIT plots that present a multidecadal view of the biophysical cover types contained within individual Australian wetlands. The WIT workflow summarises Earth observation data over 35 years at 30 m resolution within a user-defined wetland boundary to produce a time-series plot (WIT plot) of the percentage of the wetland covered by open water, areas of water mixed with vegetation (‘wet’), green vegetation, dry vegetation, and bare soil. We compare these WIT plots with documented changes that have occurred in floodplain shrublands, alpine peat wetlands, and lacustrine and palustrine wetlands, demonstrating the power of satellite observations to supplement ground-based data collection in a diverse range of wetland types. The use of WIT plots to observe and manage wetlands enables improved evidence-based decision making.
+SN  - 1943-6246
+UR  - https://doi.org/10.1007/s13157-023-01682-7
+DO  - 10.1007/s13157-023-01682-7
+ID  - Dunn2023
+ER  - 

@@ -14,7 +14,8 @@ book:
       - ecosystem/spatial-metrics.qmd
     - part: "Indicator design"
       chapters: 
-      - indicator/download.qmd
+      - indicator/download-landcover.qmd
+      - indicator/download-wit.qmd
       - indicator/exploration.qmd
     - part: "Results per region"
       chapters: 

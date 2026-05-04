@@ -1,0 +1,97 @@
+# Time series of land cover data 
+
+For this indicator we want to look at how land cover changes in the region where this threatened ecological community is located. 
+
+We use a landcover product derived from remote sensing (landsat) data that spans more than 30 years. This product allows us to look at changes in land use (cultivated vs. natural vegetation), vegetation type (woody vs herbaceous), vegetation cover (from sparse to closed cover), as well as aquatic vegetation cover, water persistence and seasonality, artifical surfaces and natural bare cover.
+
+## Data source 
+
+We are using here the Digital Earth Australia Land Cover (Landsat) product, which provides annual land cover maps at 30 m resolution across Australia from 1988 to 2024 [@DEA_landcover]. This product is derived from Landsat satellite imagery and classifies land cover into different classes based on vegetation type, cover level, water presence and surface type [@Lucas_2019]. 
+
+:::{.aside}
+**DEA Land Cover (Landsat)**
+
+[Data description link](https://knowledge.dea.ga.gov.au/data/product/dea-land-cover-landsat/?tab=description)<br>
+*id*: `ga_ls_landcover_class_cyear_3`<br>
+*Version*: 2.0.0<br>
+*Type*: Derivative, Raster<br>
+*Resolution*: 30 m<br>
+*Coverage*: 1988 to 2024<br>
+*Data updates*: Yearly frequency, Ongoing<br>
+
+:::
+
+## Processing data from DEA datacube
+
+We run a script on NCI Gadi to extract the land cover data for each grid cell in our AOO grid, and then we can use `rsync` to download the data to our local machine.
+
+
+### Upload vector data to NCI Gadi
+
+First we upload our vector file from our local machine to NCI Gadi using the Gadi DataMover node. You will need to replace the placeholders with your own user and project codes.
+
+```{.sh filename="@local: use the shell terminal"}
+export REPODIR=...
+export OUTPUT_DIR=$REPODIR/gisdata/TEC
+export NCI_USERNAME=...
+export NCI_PROJECT=...
+scp ${OUTPUT_DIR}/Swamps-Fleurieu-IM*.gpkg ${NCI_USERNAME}@gadi-dm.nci.org.au:/scratch/${NCI_PROJECT}/${NCI_USERNAME}/Fleurieu-swamps/
+```
+
+### Python script to extract land cover data for each grid cell
+
+```{python}
+#| eval: false
+#| filename: "@gadi.nci.org.au: landcover-fleurieu.py"
+## This script extracts the land cover data for each grid cell in the AOO grid from the DEA datacube and saves it as a GeoTIFF file.
+
+# Import necessary libraries
+import datacube
+import geopandas as gpd
+import rioxarray
+import numpy as np
+# Initialise datacube
+dc = datacube.Datacube(app="DEA_Land_Cover")
+# Vector file with the AOO grid
+poly = gpd.read_file("Swamps-Fleurieu-IM_AOO.gpkg").to_crs(4326)
+poly.id = [int(x) for x in poly.id]
+poly.set_index('id', inplace=True)
+# Full range of dates:
+time_range = ("1988", "2024")
+# Loop through all polygons in the AOO grid and extract the land cover data for each polygon
+for idx,slc in poly.bounds.iterrows():
+    lon_range=np.array((slc['minx'],slc['maxx']))
+    lat_range=np.array((slc['miny'],slc['maxy']))
+    # Create the 'query' dictionary object, which contains the longitudes, latitudes and time defined above
+    query = {
+        "y": lat_range,
+        "x": lon_range,
+        "time": time_range,
+    }
+
+    # Load DEA Land Cover data from the datacube
+    lc = dc.load(
+        product="ga_ls_landcover_class_cyear_3",
+        output_crs="EPSG:3577",
+        measurements=[
+            "level3",
+            "level4"
+        ],
+        resolution=(-30, 30),
+        **query
+    )
+    output_path = "lc-cell-{}.tif".format(idx)
+    lc.level4.rio.to_raster(output_path, driver="GTiff")
+```
+
+### Sync data from NCI Gadi to local machine
+
+This is an example of the `rsync` command to download the land cover data from NCI Gadi to your local machine. You will need to replace the placeholders with your own values.
+
+```{.sh filename="@local: use the shell terminal"}
+export REPODIR=...
+export OUTPUT_DIR=$REPODIR/gisdata/landcover
+export NCI_USERNAME=...
+export NCI_PROJECT=...
+rsync -vruP ${NCI_USERNAME}@gadi-dm.nci.org.au:/scratch/${NCI_PROJECT}/${NCI_USERNAME}/Fleurieu-swamps/ ${OUTPUT_DIR}   
+```
